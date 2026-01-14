@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Customizações Globais */
+@layer base {
+  * {
+    @apply m-0 p-0;
+  }
+}
+
+/* Estilos Utilitários Customizados */
+@layer utilities {
+  .safe-area {
+    @apply pt-safe pb-safe px-safe;
+  }
+
+  .glass-effect {
+    @apply bg-white/10 backdrop-blur-md border border-white/20;
+  }
+
+  .smooth-shadow {
+    @apply shadow-lg shadow-black/10;
+  }
+
+  .gradient-brand {
+    @apply bg-gradient-to-r from-brand-600 to-brand-500;
+  }
+}

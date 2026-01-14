@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "584123658590",
+    "project_id": "movepay-c6651",
+    "storage_bucket": "movepay-c6651.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:584123658590:android:7c8e93fc1f3cdbe52b5fcf",
+        "android_client_info": {
+          "package_name": "com.movepay.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDztL8hyt9Y9NsR95SxVUF4OkNI9Nz85UI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
