@@ -14,6 +14,7 @@ import {
 import { useRouter } from 'expo-router';
 import styled from 'styled-components/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useQueryClient } from '@tanstack/react-query';
 import { 
   MapPin, 
   Calendar, 
@@ -266,6 +267,7 @@ const SectionTitle = styled.Text`
 
 export default function HomeScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const user = useUserStore(state => state.user);
   const hydrateUser = useUserStore(state => state.hydrate);
   const filters = useFilterStore();
@@ -301,8 +303,17 @@ export default function HomeScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await hydrateUser();
-    setTimeout(() => setRefreshing(false), 1200);
+    try {
+      // Atualizar dados do usuário e invalidar cache de viagens para forçar reload
+      await Promise.all([
+        hydrateUser(),
+        queryClient.invalidateQueries({ queryKey: ['trips'] })
+      ]);
+    } catch (err) {
+      console.error('❌ Erro ao atualizar:', err);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleSearchPress = () => {
