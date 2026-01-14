@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:584123658590:android:7c8e93fc1f3cdbe52b5fcf",
         "android_client_info": {
-          "package_name": "com.movepay.app"
+          "package_name": "com.movepay.mobile"
         }
       },
       "oauth_client": [],
