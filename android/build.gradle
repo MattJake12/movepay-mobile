@@ -18,6 +18,21 @@ allprojects {
     mavenCentral()
     maven { url 'https://www.jitpack.io' }
   }
+
+  // Corrigir erro de compatibilidade de atributos do AGP 8.11.0
+  dependencies {
+    components {
+      all { details ->
+        ['releaseRuntime', 'releaseCompile', 'debugRuntime', 'debugCompile'].each { variantName ->
+          details.withVariant(variantName) { variant ->
+            variant.attributes {
+              attribute(Attribute.of("com.android.build.api.attributes.AgpVersionAttr", String.class), "8.11.0")
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 apply plugin: "expo-root-project"

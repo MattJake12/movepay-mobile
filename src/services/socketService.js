@@ -3,10 +3,10 @@ import { useUserStore } from '../store/useUserStore';
 import { useToastStore } from './toastService';
 import { queryClient } from './queryClient';
 import api from './api';
+import Constants from 'expo-constants';
 
-// URL do Backend (ajustar conforme ambiente)
-// Em dev (Android Emulator), use o IP da máquina, não localhost
-const SOCKET_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.10:3000'; 
+// URL do Backend (usando variável de ambiente ou fallback)
+const SOCKET_URL = Constants.expoConfig?.extra?.apiUrl || 'http://192.168.1.10:3000'; 
 
 let socket = null;
 

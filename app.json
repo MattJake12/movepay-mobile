@@ -3,8 +3,6 @@
     "name": "MovePay",
     "slug": "movepay-mobile",
     "version": "1.0.0",
-    "orientation": "portrait",
-    "userInterfaceStyle": "light",
     "scheme": "movepay",
     "updates": {
       "fallbackToCacheTimeout": 0
@@ -12,15 +10,6 @@
     "assetBundlePatterns": [
       "**/*"
     ],
-    "ios": {
-      "bundleIdentifier": "com.movepay.mobile"
-    },
-    "android": {
-      "package": "com.movepay.mobile",
-      "permissions": [
-        "android.permission.CAMERA"
-      ]
-    },
     "plugins": [
       [
         "expo-router",
@@ -44,7 +33,8 @@
       },
       "eas": {
         "projectId": "84b659c6-2517-4a24-86ba-1d9a124070b5"
-      }
+      },
+      "apiUrl": "http://192.168.1.10:3000"
     }
   }
 }

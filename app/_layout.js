@@ -1,10 +1,5 @@
 // File: app/_layout.js
 
-// Carregar polyfills e configurações iniciais
-import '../src/suppressWarnings';
-import '../src/polyfills.native';
-import '../src/polyfills';
-
 import React, { useEffect } from 'react';
 import { Stack, SplashScreen, useNavigationContainerRef } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';

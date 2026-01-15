@@ -1,8 +1,5 @@
 // File: app/index.js
 
-// Carregar polyfills PRIMEIRO, antes de qualquer import de styled-components
-import '../src/polyfills';
-
 import { Redirect } from 'expo-router';
 import { View, ActivityIndicator } from 'react-native';
 import { useState, useEffect } from 'react';
