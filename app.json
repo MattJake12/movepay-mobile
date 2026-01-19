@@ -27,6 +27,13 @@
         }
       ]
     ],
+    "android": {
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyAiEvKApuqvJV7RXdX253cj6wy2VlQPnsY"
+        }
+      }
+    },
     "extra": {
       "router": {
         "origin": false

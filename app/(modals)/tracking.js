@@ -1,14 +1,31 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, ActivityIndicator, TouchableOpacity, Text, StatusBar } from 'react-native';
+import {
+  View,
+  ActivityIndicator,
+  TouchableOpacity,
+  Text,
+  StatusBar
+} from 'react-native';
+
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import styled from 'styled-components/native';
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+
+import MapView, {
+  MarkerView,
+  ShapeSource,
+  LineLayer,
+  Camera
+} from '@maplibre/maplibre-react-native';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Bus, MapPin, Navigation, Clock } from 'lucide-react-native';
-import { useRouteMap, calculateMapBounds } from '../../src/hooks/useRouteMap';
+import { ArrowLeft, Navigation, Clock } from 'lucide-react-native';
+
+import { useRouteMap } from '../../src/hooks/useRouteMap';
 import { colors, spacing, fontSize, fontWeight, shadows } from '../../src/theme/theme';
 
-// ===== STYLED COMPONENTS =====
+/* =======================
+   STYLED COMPONENTS
+======================= */
 
 const Container = styled(SafeAreaView)`
   flex: 1;
@@ -122,128 +139,100 @@ const BusPlate = styled.Text`
   font-size: 12px;
 `;
 
+/* =======================
+   SCREEN
+======================= */
+
 export default function TrackingScreen() {
   const router = useRouter();
   const { tripId } = useLocalSearchParams();
+
   const mapRef = useRef(null);
 
-  // 1. Dados da Rota (Estáticos)
   const { data: routeData, isLoading } = useRouteMap(tripId);
 
-  // 2. Dados do Autocarro (Ao Vivo - Simulado por enquanto)
   const [busLocation, setBusLocation] = useState(null);
+  const [trackingError, setTrackingError] = useState(null);
 
-  // Simular movimento do autocarro
+  /* =======================
+     SIMULA MOVIMENTO
+  ======================= */
+
   useEffect(() => {
-    if (!routeData?.trajectory || routeData.trajectory.length < 2) return;
+    if (!routeData?.trajectory || routeData.trajectory.length < 2) {
+      setTrackingError('Dados de rota insuficientes.');
+      return;
+    }
 
-    // Começa na origem
+    setTrackingError(null);
+
     let progress = 0;
     const interval = setInterval(() => {
-      progress += 0.005; // Movimento mais suave (0.5% por tick)
+      progress += 0.003;
       if (progress > 1) progress = 0;
 
-      // LÓGICA DE INTERPOLAÇÃO MULTI-PONTO
-      // Permite que o autocarro siga a curva da estrada (trajectory)
-      // em vez de uma linha reta que atravessa o mar.
-      
       const path = routeData.trajectory;
-      const totalSegments = path.length - 1;
-      
-      // Em qual segmento estamos? (ex: 0 a 8)
-      const exactIndex = progress * totalSegments;
-      const currentIndex = Math.floor(exactIndex);
-      const nextIndex = Math.min(currentIndex + 1, totalSegments);
-      
-      // Progresso dentro deste segmento específico (0 a 1)
-      const segmentProgress = exactIndex - currentIndex;
+      const max = path.length - 1;
+      const idx = progress * max;
 
-      const start = path[currentIndex];
-      const end = path[nextIndex];
+      const a = path[Math.floor(idx)];
+      const b = path[Math.min(Math.floor(idx) + 1, max)];
 
-      if (start && end) {
-        setBusLocation({
-          latitude: start.latitude + (end.latitude - start.latitude) * segmentProgress,
-          longitude: start.longitude + (end.longitude - start.longitude) * segmentProgress,
-          // Rotação simplificada (apontar para o próximo ponto)
-          heading: Math.atan2(end.longitude - start.longitude, end.latitude - start.latitude) * (180 / Math.PI)
-        });
-      }
-    }, 50); // 50ms para 60fps suave
+      if (!a || !b) return;
+
+      const lat = a.latitude + (b.latitude - a.latitude) * (idx % 1);
+      const lng = a.longitude + (b.longitude - a.longitude) * (idx % 1);
+
+      const heading =
+        Math.atan2(b.longitude - a.longitude, b.latitude - a.latitude) *
+        (180 / Math.PI);
+
+      setBusLocation({ latitude: lat, longitude: lng, heading });
+    }, 50);
 
     return () => clearInterval(interval);
   }, [routeData]);
 
-  // Centralizar mapa ao carregar
-  useEffect(() => {
-    if (routeData && mapRef.current) {
-      const { latitude, longitude, latitudeDelta, longitudeDelta } = calculateMapBounds([
-        routeData.originCoords,
-        routeData.destinationCoords
-      ]);
-      
-      mapRef.current.animateToRegion({
-        latitude,
-        longitude,
-        latitudeDelta: latitudeDelta * 1.2, // Zoom out um pouco
-        longitudeDelta: longitudeDelta * 1.2,
-      }, 1000);
-    }
-  }, [routeData]);
+  /* =======================
+     LOADING / ERROR
+  ======================= */
 
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color={colors.brand[600]} />
-        <Text style={{marginTop: 10, color: colors.slate[500]}}>Carregando rota...</Text>
+        <Text style={{ marginTop: 10, color: colors.slate[500] }}>
+          Carregando rota...
+        </Text>
       </View>
     );
   }
 
-  if (!routeData) {
+  if (!routeData || trackingError) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <Navigation size={48} color={colors.slate[300]} />
-        <Text style={{
-          marginTop: 20, 
-          fontSize: 16, 
-          fontWeight: 'bold', 
-          color: colors.slate[800],
-          textAlign: 'center'
-        }}>
-          Rota não disponível
+        <Text style={{ marginTop: 16, fontWeight: 'bold' }}>
+          {trackingError || 'Rota indisponível'}
         </Text>
-        <Text style={{
-          marginTop: 8, 
-          color: colors.slate[500], 
-          textAlign: 'center'
-        }}>
-          Não foi possível carregar os dados de rastreamento desta viagem.
-          Verifique sua conexão ou tente novamente mais tarde.
-        </Text>
-        <TouchableOpacity 
-          onPress={() => router.back()} 
-          style={{
-            marginTop: 30, 
-            paddingVertical: 12,
-            paddingHorizontal: 24,
-            backgroundColor: colors.slate[100],
-            borderRadius: 8
-          }}>
-          <Text style={{color: colors.slate[700], fontWeight: 'bold'}}>Voltar</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20 }}>
+          <Text>Voltar</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
+  /* =======================
+     RENDER
+  ======================= */
+
   return (
     <Container>
       <StatusBar barStyle="dark-content" />
-      
-      {/* Botão Voltar Flutuante */}
+
       <Header>
         <BackButton onPress={() => router.back()}>
-          <ArrowLeft size={24} color={colors.slate[900]} />
+          <ArrowLeft size={22} color={colors.slate[900]} />
         </BackButton>
       </Header>
 
@@ -251,57 +240,104 @@ export default function TrackingScreen() {
         <MapView
           ref={mapRef}
           style={{ flex: 1 }}
-          provider={PROVIDER_GOOGLE}
-          initialRegion={{
-            latitude: routeData.originCoords.lat,
-            longitude: routeData.originCoords.lng,
-            latitudeDelta: 5,
-            longitudeDelta: 5,
-          }}
+          styleURL={MapView.StyleURL.Street}
+          logoEnabled={false}
         >
-          {/* Rota (Linha Azul) */}
-          <Polyline
-            coordinates={routeData.trajectory}
-            strokeColor={colors.brand[600]}
-            strokeWidth={4}
+          <Camera
+            zoomLevel={12}
+            centerCoordinate={[
+              routeData.originCoords.lng,
+              routeData.originCoords.lat
+            ]}
+            animationDuration={1000}
           />
 
-          {/* Marcador Origem */}
-          <Marker coordinate={{ latitude: routeData.originCoords.lat, longitude: routeData.originCoords.lng }}>
-            <View style={{ backgroundColor: colors.white, padding: 4, borderRadius: 20, borderWidth: 2, borderColor: colors.brand[600] }}>
-              <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.brand[600] }} />
-            </View>
-          </Marker>
+          <ShapeSource
+            id="route"
+            shape={{
+              type: 'Feature',
+              geometry: {
+                type: 'LineString',
+                coordinates: routeData.trajectory.map(p => [
+                  p.longitude,
+                  p.latitude
+                ])
+              }
+            }}
+          >
+            <LineLayer
+              id="routeLine"
+              style={{
+                lineColor: colors.brand[600],
+                lineWidth: 4
+              }}
+            />
+          </ShapeSource>
 
-          {/* Marcador Destino */}
-          <Marker coordinate={{ latitude: routeData.destinationCoords.lat, longitude: routeData.destinationCoords.lng }}>
-            <MapPin size={32} color={colors.red[500]} fill={colors.white} />
-          </Marker>
+          {/* Origem */}
+          <MarkerView
+            coordinate={[
+              routeData.originCoords.lng,
+              routeData.originCoords.lat
+            ]}
+          >
+            <View
+              style={{
+                width: 12,
+                height: 12,
+                borderRadius: 6,
+                backgroundColor: colors.emerald[500]
+              }}
+            />
+          </MarkerView>
 
-          {/* 🚍 AUTOCARRO EM MOVIMENTO */}
+          {/* Destino */}
+          <MarkerView
+            coordinate={[
+              routeData.destinationCoords.lng,
+              routeData.destinationCoords.lat
+            ]}
+          >
+            <View
+              style={{
+                width: 12,
+                height: 12,
+                borderRadius: 6,
+                backgroundColor: colors.red[500]
+              }}
+            />
+          </MarkerView>
+
+          {/* Autocarro */}
           {busLocation && (
-            <Marker coordinate={busLocation}>
-              <View style={{ 
-                backgroundColor: colors.brand[600], 
-                padding: 8, 
-                borderRadius: 20,
-                borderWidth: 2,
-                borderColor: colors.white,
-                elevation: 5
-              }}>
-                <Bus size={20} color={colors.white} />
-              </View>
-            </Marker>
+            <MarkerView
+              coordinate={[busLocation.longitude, busLocation.latitude]}
+              rotation={busLocation.heading}
+            >
+              <View
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: 9,
+                  backgroundColor: colors.brand[600],
+                  borderWidth: 2,
+                  borderColor: '#fff'
+                }}
+              />
+            </MarkerView>
           )}
         </MapView>
       </MapContainer>
 
-      {/* Cartão de Informações Inferior */}
       <InfoCard>
         <RouteInfo>
           <View>
-            <LocationText>{routeData.origin} ➔ {routeData.destination}</LocationText>
-            <StatusText style={{color: colors.slate[500], marginTop: 2}}>Viagem em andamento</StatusText>
+            <LocationText>
+              {routeData.origin} ➔ {routeData.destination}
+            </LocationText>
+            <StatusText style={{ color: colors.slate[500], marginTop: 4 }}>
+              Viagem em andamento
+            </StatusText>
           </View>
           <StatusBadge>
             <StatusText>NO HORÁRIO</StatusText>
@@ -311,12 +347,14 @@ export default function TrackingScreen() {
         <DetailRow>
           <DetailItem>
             <Navigation size={18} color={colors.brand[600]} />
-            <DetailText>{routeData.totalDistance} km restantes</DetailText>
+            <DetailText>{routeData.totalDistance} km</DetailText>
           </DetailItem>
-          
+
           <DetailItem>
             <Clock size={18} color={colors.orange[500]} />
-            <DetailText>Chegada: {routeData.estimatedArrival || '18:30'}</DetailText>
+            <DetailText>
+              Chegada: {routeData.estimatedArrival || '18:30'}
+            </DetailText>
           </DetailItem>
         </DetailRow>
 
